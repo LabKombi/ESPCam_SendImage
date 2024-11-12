@@ -3,21 +3,13 @@
 #include <esp_camera.h>
 #include <WebServer.h>
 #include <pin.h>
-#include <HTTPClient.h>  // Pastikan untuk mengimpor library HTTPClient
 
 #define WIFI_SSID " "
 #define WIFI_PASSWORD "bintang8kali"
 
-// const char* ssid = " "; // Sesuaikan dengan nama WiFi Anda
-// const char* password = " "; // Sesuaikan dengan password WiFi Anda
-
 #define FILE_PHOTO_PATH "/photo.jpg"
 
-// Set up web server on port 80
 WebServer server(80);
-
-// URL API untuk mengirim gambar
-const String apiUrl = "http://192.168.179.197:5000/process_image"; // Ganti dengan URL API CNN Anda
 
 void capturePhotoSaveLittleFS() {
   camera_fb_t* fb = NULL;
@@ -46,38 +38,6 @@ void capturePhotoSaveLittleFS() {
   file.close();
   esp_camera_fb_return(fb);
 }
-
-void sendPhotoToServer() {
-  File file = LittleFS.open(FILE_PHOTO_PATH, "r");
-  if (!file) {
-    Serial.println("Failed to open photo for reading");
-    return;
-  }
-
-  uint8_t* photoData = new uint8_t[file.size()];
-  file.read(photoData, file.size());
-  file.close();
-
-  HTTPClient http;
-  http.begin(apiUrl);
-  http.addHeader("Content-Type", "multipart/form-data");
-
-  int httpResponseCode = http.POST(photoData, file.size());
-  if (httpResponseCode == 200) {
-    String response = http.getString();
-    Serial.println("Server response: " + response);
-  } else {
-    Serial.println("Error in sending POST request: " + String(httpResponseCode));
-    // Serial.println("Trying to reconnect to WiFi...");
-    // WiFi.disconnect();
-    // delay(1000);
-    // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  }
-
-  http.end();
-  delete[] photoData;
-}
-
 void handlePhoto() {
   File file = LittleFS.open(FILE_PHOTO_PATH, "r");
   if (!file) {
@@ -151,7 +111,5 @@ void setup() {
 
 void loop() {
   server.handleClient();
-  capturePhotoSaveLittleFS(); // Simpan gambar di Local
-  sendPhotoToServer(); // Mengirim gambar ke server API
-  delay(500); // Delay 1 detik sebelum mengambil foto baru
+  capturePhotoSaveLittleFS();
 }
