@@ -58,44 +58,24 @@ void sendPhotoToServer() {
   file.read(photoData, file.size());
   file.close();
 
-  // Boundary untuk multipart form-data
-  String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
-  
-  // Membuat body multipart
-  String body = "--" + boundary + "\r\n";
-  body += "Content-Disposition: form-data; name=\"file\"; filename=\"photo.jpg\"\r\n";
-  body += "Content-Type: image/jpeg\r\n\r\n";
-  
-  // Menyimpan body ke buffer untuk dikirimkan
-  uint8_t* bodyData = new uint8_t[body.length() + file.size() + 4]; // +4 untuk CRLF setelah image data
-  memcpy(bodyData, body.c_str(), body.length());
-  memcpy(bodyData + body.length(), photoData, file.size());
-  
-  // Mengakhiri boundary
-  String endingBoundary = "\r\n--" + boundary + "--\r\n";
-  memcpy(bodyData + body.length() + file.size(), endingBoundary.c_str(), endingBoundary.length());
-
-  // HTTP Client untuk mengirimkan data
   HTTPClient http;
   http.begin(apiUrl);
-  http.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
-  http.addHeader("Content-Length", String(body.length() + file.size() + endingBoundary.length()));
+  http.addHeader("Content-Type", "multipart/form-data");
 
-  int httpResponseCode = http.POST(bodyData, body.length() + file.size() + endingBoundary.length());
+  int httpResponseCode = http.POST(photoData, file.size());
   if (httpResponseCode == 200) {
     String response = http.getString();
     Serial.println("Server response: " + response);
   } else {
     Serial.println("Error in sending POST request: " + String(httpResponseCode));
-    Serial.println("Trying to reconnect to WiFi...");
-    WiFi.disconnect();
-    delay(1000);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    // Serial.println("Trying to reconnect to WiFi...");
+    // WiFi.disconnect();
+    // delay(1000);
+    // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   }
 
   http.end();
   delete[] photoData;
-  delete[] bodyData;
 }
 
 void handlePhoto() {
@@ -113,7 +93,6 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
     Serial.println("Connecting to WiFi...");
   }
   Serial.print("Connected: ");
@@ -174,5 +153,5 @@ void loop() {
   server.handleClient();
   capturePhotoSaveLittleFS(); // Simpan gambar di Local
   sendPhotoToServer(); // Mengirim gambar ke server API
-  delay(10000); // Delay 1 detik sebelum mengambil foto baru
+  delay(500); // Delay 1 detik sebelum mengambil foto baru
 }
