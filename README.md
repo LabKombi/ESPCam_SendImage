@@ -1,4 +1,4 @@
-Alur:
+*Alur:*
 1. Esp32cam menangkap gambar dan mengirim gambar tersebut menuju server melalui jembatan
 2. jembatan menghubungkan esp dengan server
 3. server menerima hasil tangkapan gambar melalui jembatan
