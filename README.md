@@ -5,4 +5,5 @@
 
 
 # **Catatan:**
-    kode yang disaya karena cuma update dari kode yang lama jadinya cuma ada untuk mata, kalo untu deteksimulut harus ditambai apa
+Kode hanya update dari kode yang lama jadinya cuma ada untuk mata, dan untuk deteksi mulut harus menunggu konfigurasi lebih lanjut
+    
