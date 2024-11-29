@@ -4,3 +4,6 @@ config_aio.py
 
 ujiCobaServer/config
 ujiCobaServer/data/shape_predictor_68_face_landmarks.dat
+
+fix_server/config
+fix_server/data/shape_predictor_68_face_landmarks.dat

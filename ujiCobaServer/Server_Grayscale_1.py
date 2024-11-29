@@ -6,8 +6,6 @@ from config.config_aio import AIO_SERVER, AIO_USERNAME, AIO_KEY, AIO_FEED
 
 app = Flask(__name__)
 
-# Adafruit IO Configuration
-
 # Gunakan konfigurasi dalam kode Anda
 print("Server:", AIO_SERVER)
 print("Username:", AIO_USERNAME)
