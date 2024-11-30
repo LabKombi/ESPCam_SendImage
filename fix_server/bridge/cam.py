@@ -5,7 +5,7 @@ import requests
 API_URL = "http://127.0.0.1:5000/predict"
 
 def capture_and_predict():
-    cap = cv2.VideoCapture(1)  # 0 adalah default kamera
+    cap = cv2.VideoCapture(0)  # 0 adalah default kamera
     if not cap.isOpened():
         print("Error: Tidak dapat mengakses kamera")
         return
