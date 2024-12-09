@@ -70,22 +70,23 @@ def predict(image_path):
         confidence = max(sleepy, mouth_yawn)
 
         if (
-            mouth_yawn > 0.65
-            or predicted_class_mouth == 'open'
-            or predicted_class_mouth == 'yawn'
+            mouth_yawn > 0.6
+            # or predicted_class_mouth == 'open'
+            # or predicted_class_mouth == 'yawn'
             ):
                 result = "yawn"
                 send_status_to_firebase(result, confidence)
                 return "yawn"
         elif (
             eye_l_open > 0.5
-            and eye_r_open > 0.5
+            or eye_r_open > 0.5
             or predicted_class_eye_l == 'yawn'
             or predicted_class_eye_r =='yawn'
             or predicted_class_eye_l == 'open'
             or predicted_class_eye_r == 'open'
             ):  
                 result = "not_sleepy"
+                # send_status_to_firebase(result, confidence)
                 return "not_sleepy"
         elif ( 
             eye_l_closed > 0.5

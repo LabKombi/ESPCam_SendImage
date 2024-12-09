@@ -3,7 +3,7 @@ import os
 from predictor import predict
 
 # Buka kamera
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 TEMP_DIR = "temp"
 if not os.path.exists(TEMP_DIR):
