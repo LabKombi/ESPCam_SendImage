@@ -1,8 +1,11 @@
+#define MAXBUFFERSIZE 12288
+
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <esp_camera.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
+#include <mbedtls/base64.h>
 #include <pin.h>
 
 #define WIFI_SSID " "
@@ -45,6 +48,31 @@ void capturePhotoSaveLittleFS() {
   esp_camera_fb_return(fb);
 }
 
+bool publishBase64(const uint8_t* data, size_t len) {
+  size_t out_len = 4 * ((len + 2) / 3);
+  uint8_t* out = (uint8_t*)ps_malloc(out_len + 1);
+  if (!out) return false;
+
+  if (mbedtls_base64_encode(out, out_len + 1, &out_len, data, len) != 0) {
+    free(out);
+    return false;
+  }
+  out[out_len] = '\0';
+
+  // Mix header dan data
+  String base64_str = "data:image/jpeg;base64,";
+  base64_str += (char*)out;
+
+  Serial.print("Sending Total Size: ");
+  Serial.println(base64_str.length());
+
+  // Send base64_str, not out
+  bool ok = photoFeed.publish(base64_str.c_str()); 
+  
+  free(out);
+  return ok;
+}
+
 void sendPhotoToAdafruitIO() {
   File file = LittleFS.open(FILE_PHOTO_PATH, "r");
   if (!file) {
@@ -56,28 +84,35 @@ void sendPhotoToAdafruitIO() {
     reconnectMQTT();
   }
 
-  // Read and send file data in chunks
-  uint8_t buffer[1024];
-  while (file.available()) {
-    size_t bytesRead = file.read(buffer, sizeof(buffer));
-    if (!photoFeed.publish(buffer, bytesRead)) {
-      Serial.println("Failed to send photo data to Adafruit IO");
-      break;
-    }
+  size_t file_size = file.size();
+  uint8_t* img = (uint8_t*)ps_malloc(file_size);
+  if (!img) {
+    Serial.println("Image buffer alloc failed");
+    file.close();
+    return;
   }
 
-  Serial.println("Photo sent to Adafruit IO");
+  file.read(img, file_size);
   file.close();
+
+  if (publishBase64(img, file_size)) {
+    Serial.println("Photo sent to Adafruit IO");
+  } else {
+    Serial.println("Failed to send photo data to Adafruit IO");
+  }
+
+  free(img);
 }
 
 void reconnectMQTT() {
-  while (mqtt.connect() != 0) {
+  int8_t ret = mqtt.connect();
+  while (ret != 0) {
     Serial.print("MQTT connection failed, error code: ");
-    serial.println(ret);
+    Serial.println(mqtt.connectErrorString(ret));
     mqtt.disconnect();
     delay(5000);
-    return;
-}
+    ret = mqtt.connect();
+  }
 
   Serial.println("MQTT connected!");
 }
@@ -123,12 +158,12 @@ void setup() {
   config.grab_mode = CAMERA_GRAB_LATEST;
 
   if (psramFound()) {
-    config.frame_size = FRAMESIZE_UXGA;
-    config.jpeg_quality = 10;
+    config.frame_size = FRAMESIZE_QVGA;
+    config.jpeg_quality = 12;
     config.fb_count = 1;
   } else {
-    config.frame_size = FRAMESIZE_SVGA;
-    config.jpeg_quality = 12;
+    config.frame_size = FRAMESIZE_QQVGA;
+    config.jpeg_quality = 15;
     config.fb_count = 1;
   }
 
@@ -136,6 +171,14 @@ void setup() {
     Serial.println("Camera initialization failed");
     return;
   }
+
+  sensor_t * s = esp_camera_sensor_get();
+  s->set_brightness(s, 1);     // Brighten the image (-2 to 2)
+  s->set_contrast(s, 1);       // Increase contrast
+  s->set_saturation(s, 0);     // Normal saturation setting
+  s->set_whitebal(s, 1);       // Auto set white balance
+  s->set_awb_gain(s, 1);       // Automatic White Balance gain
+  s->set_exposure_ctrl(s, 1);  // Automatic exposure control
 }
 
 void loop() {
